@@ -1,76 +1,74 @@
 // netlify/functions/wotd.js
-// Netlify Function: Wordnik WOTD proxy.
-// Set environment variable WORDOFTHEDAY in Netlify site settings.
-// Optionally set ALLOWED_ORIGINS (comma-separated) to control CORS origins.
-
-const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
-
 exports.handler = async function(event) {
   const WORDOFTHEDAY = process.env.WORDOFTHEDAY;
-  if (!WORDOFTHEDAY) {
+  const ALLOWED = process.env.ALLOWED_ORIGINS || '*';
+
+  const defaultCorsHeaders = {
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+
+  // Handle CORS preflight
+  if (event && event.httpMethod === 'OPTIONS') {
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'server misconfigured: WORDOFTHEDAY not set' })
+      statusCode: 204,
+      headers: {
+        ...defaultCorsHeaders,
+        "Access-Control-Allow-Origin": ALLOWED
+      },
+      body: ''
     };
   }
 
-  // CORS handling
-  const allowed = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  const origin = (event.headers && event.headers.origin) || '*';
-  const headers = {
-    'Access-Control-Allow-Origin': allowed.length > 0 ? (allowed.includes(origin) ? origin : '') : (origin || '*'),
-    'Access-Control-Allow-Methods': 'GET,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
+  if (!WORDOFTHEDAY) {
+    console.error('Missing WORDOFTHEDAY env var');
+    return {
+      statusCode: 500,
+      headers: { ...defaultCorsHeaders, "Access-Control-Allow-Origin": ALLOWED },
+      body: JSON.stringify({ error: 'WORDOFTHEDAY not configured' })
+    };
   }
 
-  // If allowed origins configured and the request origin is not in the list -> reject
-  if (allowed.length > 0 && origin && origin !== '*' && !allowed.includes(origin)) {
-    return { statusCode: 403, body: JSON.stringify({ error: 'CORS' }), headers };
+  // Determine origin to set CORS response header
+  const requestOrigin = (event.headers && (event.headers.origin || event.headers.Origin)) || '';
+  // If ALLOWED is '*' allow any; otherwise ALLOWED may be comma-separated allowed origins.
+  let allowOrigin = ALLOWED;
+  if (ALLOWED !== '*') {
+    const allowedList = ALLOWED.split(',').map(s => s.trim()).filter(Boolean);
+    allowOrigin = allowedList.includes(requestOrigin) ? requestOrigin : allowedList[0] || 'null';
   }
+
+  const date = (event.queryStringParameters && event.queryStringParameters.date) || new Date().toISOString().slice(0,10);
 
   try {
-    const dateQuery = event.queryStringParameters && event.queryStringParameters.date
-      ? `?date=${encodeURIComponent(event.queryStringParameters.date)}`
-      : '';
-    const base = 'https://api.wordnik.com/v4';
+    // Use global fetch (Node 18+ / Netlify runtime)
+    const url = `https://api.WORDOFTHEDAY.com/v4/words.json/wordOfTheDay?date=${encodeURIComponent(date)}&api_key=${encodeURIComponent(WORDOFTHEDAY)}`;
+    const res = await fetch(url);
 
-    // Word of the Day
-    const wotdResp = await fetch(`${base}/words.json/wordOfTheDay${dateQuery}&api_key=${WORDOFTHEDAY}`, { timeout: 10000 });
-    if (!wotdResp.ok) {
-      const text = await wotdResp.text();
-      return { statusCode: wotdResp.status, body: text, headers };
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('WORDOFTHEDAY returned error', res.status, text);
+      return {
+        statusCode: 502,
+        headers: { ...defaultCorsHeaders, "Access-Control-Allow-Origin": allowOrigin },
+        body: JSON.stringify({ error: 'WORDOFTHEDAY_error', status: res.status, body: text })
+      };
     }
-    const wotd = await wotdResp.json();
-    const word = wotd.word;
 
-    // Parallel: audio, example, related words
-    const [resAudio, resExample, resRelated] = await Promise.all([
-      fetch(`${base}/word.json/${encodeURIComponent(word)}/audio?useCanonical=false&limit=50&api_key=${WORDOFTHEDAY}`),
-      fetch(`${base}/word.json/${encodeURIComponent(word)}/topExample?useCanonical=false&api_key=${WORDOFTHEDAY}`),
-      fetch(`${base}/word.json/${encodeURIComponent(word)}/relatedWords?useCanonical=false&limitPerRelationshipType=10&api_key=${WORDOFTHEDAY}`)
-    ]);
-
-    const audio = resAudio.ok ? await resAudio.json() : null;
-    const topExample = resExample.ok ? await resExample.json() : null;
-    const relatedWords = resRelated.ok ? await resRelated.json() : null;
-
-    const payload = { ...wotd, audio, topExample, relatedWords };
+    const data = await res.json();
 
     return {
       statusCode: 200,
-      body: JSON.stringify(payload),
-      headers
+      headers: { ...defaultCorsHeaders, "Access-Control-Allow-Origin": allowOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify(data)
     };
   } catch (err) {
-    console.error('Netlify function error', err);
+    // Log full error to Netlify logs for debugging
+    console.error('Unhandled exception in wotd function:', err && (err.stack || err));
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'internal' }),
-      headers
+      headers: { ...defaultCorsHeaders, "Access-Control-Allow-Origin": allowOrigin },
+      body: JSON.stringify({ error: 'internal', message: err && err.message ? err.message : 'unknown' })
     };
   }
 };

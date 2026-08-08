@@ -6,16 +6,16 @@ const popupWotD = async () => {
         console.log(date);
 
         
-        const res = await fetch(`https://api.wordnik.com/v4/words.json/wordOfTheDay?date=${date}&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
+        const res = await fetch(`https://api.WORDOFTHEDAY.com/v4/words.json/wordOfTheDay?date=${date}&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
 
         const data = await res.json();
 
         const word = document.querySelector('#word');
         word.innerHTML = data.word;
 
-        const resAudio = await fetch(`https://api.wordnik.com/v4/word.json/${data.word}/audio?useCanonical=false&limit=50&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
-        const resExample = await fetch(`https://api.wordnik.com/v4/word.json/${data.word}/topExample?useCanonical=false&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
-        const resSimilar = await fetch(`https://api.wordnik.com/v4/word.json/${data.word}/relatedWords?useCanonical=false&limitPerRelationshipType=10&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
+        const resAudio = await fetch(`https://api.WORDOFTHEDAY.com/v4/word.json/${data.word}/audio?useCanonical=false&limit=50&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
+        const resExample = await fetch(`https://api.WORDOFTHEDAY.com/v4/word.json/${data.word}/topExample?useCanonical=false&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
+        const resSimilar = await fetch(`https://api.WORDOFTHEDAY.com/v4/word.json/${data.word}/relatedWords?useCanonical=false&limitPerRelationshipType=10&api_key=rs8exkozlx5qoe6we3arcvx3us22jlrec5jo2t4v152fh87r5`);
 
         const dataExample = await resExample.json();
         
