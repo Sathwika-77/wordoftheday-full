@@ -1,0 +1,12 @@
+{
+  "name": "wordnik-netlify-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Proxy Wordnik WOTD for browser extension (store secret on Netlify env variables).",
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "node-fetch": "^3.4.0"
+  }
+}

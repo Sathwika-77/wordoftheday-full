@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Word of the Day!",
+  "description": "Word of the Day",
+  "version": "2.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "popup-16.png",
+      "48": "popup-48.png",
+      "128": "popup-128.png"
+    }
+  },
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+  "https://verdant-monstera-38eaa2.netlify.app/*"
+  ]
+}

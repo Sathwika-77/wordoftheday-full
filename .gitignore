@@ -1,0 +1,18 @@
+# Node
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Netlify functions build output (optional)
+.netlify/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Secrets (never commit)
+.env

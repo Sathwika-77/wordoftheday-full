@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="popup.css"/>
+  <title>Word of the day!</title>
+</head>
+<body>
+  <p class="title2">Word of The Day!❤️</p>
+  <h2 class="word" id="word">--</h2>
+
+  <div class="adds">
+    <p id="wordDef"></p>
+    <br>
+
+    <audio controls id="pronounciation" style="display:none;">
+      <source type="audio/mpeg" />
+    </audio>
+
+    <p class="pos">Part of Speech: <span id="partOfSpeech"></span></p>
+
+    <p class="ex">Example: </p>
+    <p id="example"></p>
+
+    <h3>Similar:</h3>
+    <ul id="similar"></ul>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
